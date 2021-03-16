@@ -2,75 +2,78 @@ import datetime as dt
 
 
 class Record:
-    """
-    Создаем записи.
-    Свойства класса:
+    """Создаем записи.
+
+    Атрибуты класса:
     - число amount (денежная сумма или количество килокалорий);
     - комментарий comment, поясняющий, на что потрачены деньги
     или откуда взялись калории;
-    - дату создания записи date (передаётся в явном виде в конструктор,
+    - создания записи date (передаётся в явном виде в конструктор,
     либо присваивается значение по умолчанию — текущая дата).
     """
+    def __init__(self, amount: float, comment: str, date=None) -> None:
 
-    def __init__(self, amount, comment, date=None):
         self.amount = amount
         self.comment = comment
+        date_format: str = "%d.%m.%Y"
         if date is None:
-            self.date = dt.datetime.now().date()
+            self.date = dt.date.today()
         else:
-            self.date = dt.datetime.strptime(date, "%d.%m.%Y").date()
+            self.date = dt.datetime.strptime(date, date_format).date()
 
 
 class Calculator:
-    def __init__(self, limit):
-        """
-        Общая функциональностью для классов CashCalories и Calories.
+
+    def __init__(self, limit: float) -> None:
+        """Общая функциональностью для классов
+        CashCalculator и CaloriesCalculator.
+
+        Атрибуты класса:
         - число limit (дневной лимит трат/калорий, который задал пользователь);
         - для хранение записей, создаем пустой список records.
         """
-
         self.limit = limit
-        self.records = []
+        self.records: list = []
 
-    def add_record(self, record):
+    def add_record(self, record: float) -> None:
         """
-        Метод добавляет и сохраняет новые зиписи
-        о деньгах/калориях в список records.
+        Метод добавляет записи о деньгах/калориях в список records.
         """
-
         self.records.append(record)
 
-    def get_today_stats(self):
+    def get_today_stats(self) -> float:
         """
         Метод считает, сколько денег/калорий уже съедено сегодня.
         """
-
-        count = 0
-        for record in self.records:
-            if record.date == dt.datetime.now().date():
-                count += record.amount
+        date_now = dt.date.today()
+        count = sum([record.amount for record in self.records
+                     if record.date == date_now])
         return count
 
-    def get_week_stats(self):
+    def get_week_stats(self) -> float:
         """
         Метод считает, сколько денег/калорий потрачено за последние 7 дней.
         """
-
-        count = 0
-        week = dt.datetime.now().date() - dt.timedelta(days=7)
-        for record in self.records:
-            if week <= record.date <= dt.datetime.now().date():
-                count += record.amount
+        date_now = dt.date.today()
+        week = date_now - dt.timedelta(days=6)
+        count = sum([record.amount for record in self.records
+                     if date_now >= record.date >= week])
         return count
+
+    def limit_today(self) -> float:
+        """
+        Метод считает, сколько денег/калорий осталось на день.
+        """
+        return self.limit - self.get_today_stats()
 
 
 class CaloriesCalculator(Calculator):
-    def get_calories_remained(self):
+
+    def get_calories_remained(self) -> str:
         """
         Метод определяет, сколько ещё калорий можно/нужно получить сегодня.
         """
-
-        calories_today = self.limit - self.get_today_stats()
+        calories_today: float = self.limit_today()
         if calories_today > 0:
             return ("Сегодня можно съесть что-нибудь ещё,"
                     " но с общей калорийностью не более "
@@ -79,32 +82,36 @@ class CaloriesCalculator(Calculator):
 
 
 class CashCalculator(Calculator):
-    USD_RATE = 73.45
-    EURO_RATE = 87.34
-    RUB_RATE = 1.00
 
-    def get_today_cash_remained(self, currency):
+    USD_RATE: float = 73.45
+    EURO_RATE: float = 87.34
+    RUB_RATE: float = 1.00
+
+    def get_today_cash_remained(self, currency: str) -> str:
         """
         Метод возвращает сообщения о состоянии дневного баланса.
         """
+        cash_sum: float = self.limit_today()
+        cash_currency: str = currency.lower()
+        cash_type: list = ["usd", "eur", "rub"]
 
-        cash_sum = self.limit - self.get_today_stats()
-        cash_type = ""
+        if cash_currency not in cash_type:
+            return f"{currency} такой валюты нету!"
 
-        if currency == "usd":
-            cash_sum /= self.USD_RATE
-            cash_type = "USD"
-        elif currency == "eur":
-            cash_sum /= self.EURO_RATE
-            cash_type = "Euro"
-        elif currency == "rub":
-            cash_sum /= self.RUB_RATE
-            cash_type = "руб"
-
-        cash_sum = round(cash_sum, 2)
         if cash_sum == 0:
             return "Денег нет, держись"
-        elif cash_sum < 0:
-            return ("Денег нет, держись: твой долг - "
-                    "{:.2f}".format(-cash_sum) + f" {cash_type}")
-        return f"На сегодня осталось {cash_sum} {cash_type}"
+
+        if cash_currency in cash_type:
+            dict_currency = {
+                "usd": (cash_sum / self.USD_RATE, "USD"),
+                "eur": (cash_sum / self.EURO_RATE, "Euro"),
+                "rub": (cash_sum / self.RUB_RATE, "руб"),
+            }
+            cash_dict: float = dict_currency[currency][0]
+            type_dict: str = dict_currency[currency][1]
+            cash_dict: float = abs(round(cash_dict, 2))
+
+            if cash_sum < 0:
+                return ("Денег нет, держись: "
+                        f"твой долг - {cash_dict} {type_dict}")
+            return f"На сегодня осталось {cash_dict} {type_dict}"
