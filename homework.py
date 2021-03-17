@@ -1,9 +1,11 @@
 import datetime as dt
+from typing import Optional, Union
+
 DATE_FORMAT: str = "%d.%m.%Y"
 
 
 class Record:
-    """Создаем записи для класса Calculator.
+    """Объект для хранения записей о расходах.
 
     Атрибуты класса:
     - число amount (денежная сумма или количество килокалорий);
@@ -12,7 +14,11 @@ class Record:
     - дата создания записи (передаётся в явном виде в конструктор,
     либо присваивается значение по умолчанию — текущая дата).
     """
-    def __init__(self, amount: float, comment: str, date: str = None) -> None:
+
+    def __init__(self,
+                 amount: float,
+                 comment: str,
+                 date: Optional[str] = None) -> None:
         self.amount = amount
         self.comment = comment
         if date is None:
@@ -31,9 +37,9 @@ class Calculator:
     """
     def __init__(self, limit: float) -> None:
         self.limit = limit
-        self.records: list[float, str, str] = []
+        self.records: Record[list[Union[int, float], str, str]] = []
 
-    def add_record(self, record: float) -> None:
+    def add_record(self, record: str) -> None:
         """
         Метод добавляет записи о деньгах/калориях в список records.
         """
@@ -53,9 +59,9 @@ class Calculator:
         Метод считает, сколько денег/калорий потрачено за последние 7 дней.
         """
         today = dt.date.today()
-        recent_days = today - dt.timedelta(days=7)
+        week_ago = today - dt.timedelta(days=7)
         count = sum(record.amount for record in self.records
-                    if recent_days < record.date <= today)
+                    if week_ago < record.date <= today)
         return count
 
     def remainder_today(self) -> float:
@@ -90,25 +96,25 @@ class CashCalculator(Calculator):
         """
         cash_sum: float = self.remainder_today()
         cash_currency: str = currency.lower()
-        cash_type: tuple = ("usd", "eur", "rub")
 
         if cash_sum == 0:
             return "Денег нет, держись"
 
-        if cash_currency not in cash_type:
-            return f"{currency} такой валюты нету!"
-
-        currency_type: dict = {
+        currency_type: dict[str, tuple[Union[int, float], str]] = {
             "usd": (self.USD_RATE, "USD"),
             "eur": (self.EURO_RATE, "Euro"),
             "rub": (self.RUB_RATE, "руб"),
         }
 
-        after_exchange, cash_type = currency_type[currency]
-        cash_sum: float = cash_sum / after_exchange
+        if cash_currency not in currency_type:
+            return f"{currency} такой валюты нету!"
+
+        exchange_rate, cash_type = currency_type[currency]
+        cash_sum: float = cash_sum / exchange_rate
         cash_sum = round(cash_sum, 2)
 
         if cash_sum < 0:
+            amount_debt: float = abs(cash_sum)
             return ("Денег нет, держись: "
-                    f"твой долг - {abs(cash_sum)} {cash_type}")
+                    f"твой долг - {amount_debt} {cash_type}")
         return f"На сегодня осталось {cash_sum} {cash_type}"
