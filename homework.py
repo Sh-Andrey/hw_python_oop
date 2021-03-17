@@ -39,7 +39,7 @@ class Calculator:
         self.limit = limit
         self.records: Record[list[Union[int, float], str, str]] = []
 
-    def add_record(self, record: str) -> None:
+    def add_record(self, record: Record) -> None:
         """
         Метод добавляет записи о деньгах/калориях в список records.
         """
