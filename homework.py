@@ -35,6 +35,7 @@ class Calculator:
     - число limit (дневной лимит трат/калорий, который задал пользователь);
     - для хранения записей, создаем пустой список records.
     """
+    
     def __init__(self, limit: float) -> None:
         self.limit = limit
         self.records: List[Record] = []
