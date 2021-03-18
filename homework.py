@@ -1,5 +1,5 @@
 import datetime as dt
-from typing import Optional, Union
+from typing import Optional, Dict, List, Tuple
 
 DATE_FORMAT: str = "%d.%m.%Y"
 
@@ -37,7 +37,7 @@ class Calculator:
     """
     def __init__(self, limit: float) -> None:
         self.limit = limit
-        self.records: Record[list[Union[int, float], str, str]] = []
+        self.records: List[Record] = []
 
     def add_record(self, record: Record) -> None:
         """
@@ -92,7 +92,8 @@ class CashCalculator(Calculator):
 
     def get_today_cash_remained(self, currency: str) -> str:
         """
-        Метод возвращает сообщения о состоянии дневного баланса.
+        Метод возвращает сообщения о состоянии дневного баланса
+        в указанной валюте.
         """
         cash_sum: float = self.remainder_today()
         cash_currency: str = currency.lower()
@@ -100,7 +101,7 @@ class CashCalculator(Calculator):
         if cash_sum == 0:
             return "Денег нет, держись"
 
-        currency_type: dict[str, tuple[Union[int, float], str]] = {
+        currency_type: Dict[str, Tuple[float, str]] = {
             "usd": (self.USD_RATE, "USD"),
             "eur": (self.EURO_RATE, "Euro"),
             "rub": (self.RUB_RATE, "руб"),
